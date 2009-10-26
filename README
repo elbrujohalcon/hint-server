@@ -1,0 +1,2 @@
+This library provides a server process (implemented using eprocess) that can receive and run actions in the Interpreter monad.
+See http://hackage.haskell.org/package/hint-server
