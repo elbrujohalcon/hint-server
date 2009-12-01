@@ -1,5 +1,5 @@
 name: hint-server
-version: 1.0.0
+version: 1.1.0
 cabal-version: >=1.6
 build-type: Simple
 license: BSD3
@@ -28,7 +28,7 @@ Library
                    mtl >=1.1.0,                 mtl < 1.2,
                    monad-loops >=0.3.0,         monad-loops < 0.4,
                    hint >=0.3.1,                hint < 0.4,
-                   eprocess >=1.0.0,            eprocess < 2
+                   eprocess >=1.1.0,            eprocess < 2
     exposed-modules: Language.Haskell.Interpreter.Server
     hs-source-dirs: src
     

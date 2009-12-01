@@ -14,9 +14,7 @@ import Language.Haskell.Interpreter
 
 -- | The server handle.  It's returned on process creation and should be used
 -- afterwards to send messages to it
-newtype ServerHandle = SH {handle :: Handle (Either Stop (InterpreterT IO ()))}
-
-data Stop = Stop
+newtype ServerHandle = SH {handle :: Handle (InterpreterT IO ())}
 
 instance MonadInterpreter m => MonadInterpreter (ReceiverT r m) where
     fromSession = lift . fromSession
@@ -32,13 +30,7 @@ start = (spawn $ makeProcess runInterpreter interpreter) >>= return . SH
     where interpreter =
             do
                 setImports ["Prelude"]
-                iterateWhile id $ do
-                                    v <- recv
-                                    case v of
-                                        Left Stop ->
-                                            return False
-                                        Right acc ->
-                                            lift acc >> return True
+                forever $ recv >>= lift
 
 -- | Asynchronically runs an action and returns the /MVar/ that will be filled
 -- with the result when it's there. Usage:
@@ -50,7 +42,7 @@ asyncRunIn :: ServerHandle              -- ^ The handle of the server that will 
             -> IO (MVar (Either InterpreterError a))
 asyncRunIn server action = do
                                 resVar <- liftIO newEmptyMVar
-                                sendTo (handle server) $ Right $ try action >>= liftIO . putMVar resVar
+                                sendTo (handle server) $ try action >>= liftIO . putMVar resVar
                                 return resVar
 
 -- | Runs the action. Usage:
@@ -62,7 +54,7 @@ runIn :: ServerHandle       -- ^ The handle of the server that will run the acti
        -> IO (Either InterpreterError a)
 runIn server action = runHere $ do
                                     me <- self
-                                    sendTo (handle server) $ Right $ try action >>= sendTo me
+                                    sendTo (handle server) $ try action >>= sendTo me
                                     recv
 
 -- | Runs all the pending actions (those that where run using 'asyncRunIn'. Usage:
@@ -81,4 +73,4 @@ try a = (a >>= return . Right) `catchError` (return . Left)
 --      stop serverhandle
 -- @
 stop :: ServerHandle -> IO ()
-stop server = sendTo (handle server) $ Left Stop
+stop = kill . handle
